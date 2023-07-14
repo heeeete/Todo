@@ -5,8 +5,11 @@ import {
 	TouchableOpacity,
 	Dimensions,
 	Modal,
+	SafeAreaView,
+	FlatList,
+	Image,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal2 from "react-native-modal";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { ScrollView } from "react-native-gesture-handler";
@@ -17,13 +20,20 @@ import {
 } from "react-native-paper";
 import { theme } from "./react-native-paper-theme"; // theme.js에서 theme 가져오기
 import axios from "axios";
+import { launchCamera, launchImageLibrary } from "react-native-image-picker";
+import {
+	getStorage,
+	ref,
+	uploadBytes,
+	listAll,
+	getDownloadURL,
+} from "firebase/storage";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 const underlineColor = "pink"; // focus 상태일 때와 아닐 때의 색상
 
 function MyTextInput({ text, onChangeText, label }) {
-	console.log(text);
 	return (
 		<TextInput
 			value={text}
@@ -37,9 +47,10 @@ function MyTextInput({ text, onChangeText, label }) {
 	);
 }
 
-function AddModal({ isAddModal, setIsAddModal }) {
+function AddModal({ isAddModal, setIsAddModal, loadRememberBooks }) {
 	const [title, setTitle] = useState("");
 	const [review, setReview] = useState("");
+	const [selectedImage, setSelectedImage] = useState(null);
 	const [user, setUser] = useState("HUIPARK");
 
 	const onChangeTitle = (payload) => {
@@ -53,19 +64,21 @@ function AddModal({ isAddModal, setIsAddModal }) {
 		setIsAddModal(false);
 		setTitle("");
 		setReview("");
+		setSelectedImage(null);
 	};
 
 	const AddRememberBook = async () => {
 		try {
 			const response = await axios.post(
-				"http://127.0.0.1:3001/addrememberbook",
+				"http://127.0.0.1:3001/addRememberBook",
 				{
 					user: user,
 					title: title,
 					review: review,
 				}
 			);
-			console.log("성공");
+			closeModal();
+			loadRememberBooks();
 		} catch (error) {
 			console.log(error);
 		}
@@ -96,6 +109,25 @@ function AddModal({ isAddModal, setIsAddModal }) {
 		);
 	};
 
+	const selectImage = () => {
+		const options = {
+			title: "사진 선택",
+		};
+
+		launchImageLibrary(options, (response) => {
+			if (response.didCancel) {
+				console.log("사용자가 이미지 선택을 취소했습니다.");
+			} else if (response.error) {
+				console.log("ImagePicker 에러: ", response.error);
+			} else if (response.customButton) {
+				console.log("Custom button clicked :", response.customButton);
+			} else {
+				const source = { uri: response.assets[0].uri };
+				setSelectedImage(source);
+			}
+		});
+	};
+
 	return (
 		<Modal
 			visible={isAddModal}
@@ -106,12 +138,18 @@ function AddModal({ isAddModal, setIsAddModal }) {
 		>
 			<View style={{ flex: 1, marginHorizontal: 20 }}>
 				<Header />
-				<View
-					style={{ flex: 0.5, alignItems: "center", backgroundColor: "Red" }}
-				>
-					<View
-						style={{ height: "100%", width: "50%", backgroundColor: "black" }}
-					></View>
+				<View style={{ flex: 0.5, alignItems: "center" }}>
+					{selectedImage ? (
+						<Image
+							source={selectedImage}
+							style={{ height: "100%", width: "50%" }}
+						/>
+					) : (
+						<TouchableOpacity
+							style={{ height: "100%", width: "50%", backgroundColor: "black" }}
+							onPress={() => selectImage()}
+						></TouchableOpacity>
+					)}
 				</View>
 				<View style={{ flex: 1 }}>
 					<MyTextInput text={title} onChangeText={onChangeTitle} label="제목" />
@@ -157,6 +195,10 @@ function MenuModal({ isMenuModal, onBackdropPress }) {
 function RememberBook({ navigation }) {
 	const [isMenuModal, setIsMenuModal] = useState(false);
 	const [isAddModal, setIsAddModal] = useState(false);
+	const [rememberBooks, setRememberBooks] = useState([]);
+	const [numColumns, setNumColumns] = useState(3); // 기본 컬럼 수로 초기화합니다.
+
+	const [user, d] = useState("HUIPARK");
 
 	const onBackdropPress = () => setIsMenuModal((prevStatus) => !prevStatus);
 
@@ -164,54 +206,110 @@ function RememberBook({ navigation }) {
 
 	const addToggleModal = () => setIsAddModal((prevStatus) => !prevStatus);
 
+	useEffect(() => {
+		const fetchRememberBooks = async () => {
+			// try {
+			// 	const response = await axios.get(
+			// 		"http://127.0.0.1:3001/getRememberBooks",
+			// 		{
+			// 			params: {
+			// 				user: user,
+			// 			},
+			// 		}
+			// 	);
+			// 	setRememberBooks([addItem, ...response.data]);
+			// } catch (error) {
+			// 	console.log(error);
+			// }
+			await loadRememberBooks();
+		};
+		fetchRememberBooks();
+	}, []);
+
+	const loadRememberBooks = async () => {
+		try {
+			const response = await axios.get(
+				"http://127.0.0.1:3001/getRememberBooks",
+				{
+					params: {
+						user: user,
+					},
+				}
+			);
+			setRememberBooks([addItem, ...response.data]);
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const Item = ({ title }) => {
+		if (title === "addItem") {
+			return (
+				<TouchableOpacity
+					style={{
+						// flex: 0.2,
+						marginVertical: 8,
+						marginHorizontal: 1,
+						backgroundColor: "black",
+						width: "33.3%",
+						height: windowHeight / 6,
+					}}
+					onPress={() => addToggleModal()}
+				></TouchableOpacity>
+			);
+		}
+
+		return (
+			<View
+				style={{
+					backgroundColor: "#f9c2ff",
+					marginVertical: 8,
+					marginHorizontal: 1,
+					width: "33.3%",
+					height: windowHeight / 6,
+				}}
+			>
+				<Text style={{ color: "black", fontSize: 14 }}>{title}</Text>
+			</View>
+		);
+	};
+
+	const addItem = { title: "addItem", review: "addItem" };
+
 	return (
-		<PaperProvider theme={theme}>
-			<View style={styles.inner}>
-				<View style={styles.menuContainer}>
-					<MaterialIcons name="menu-book" size={30} />
-					<TouchableOpacity
-						onPress={() => categoryToggleModal()}
-						style={styles.iconContainer}
-					>
-						<MaterialIcons name="keyboard-arrow-down" size={30} />
-					</TouchableOpacity>
+		<SafeAreaView style={{ flex: 1 }}>
+			<PaperProvider theme={theme}>
+				<View style={styles.inner}>
+					<View style={styles.menuContainer}>
+						<MaterialIcons name="menu-book" size={30} />
+						<TouchableOpacity
+							onPress={() => categoryToggleModal()}
+							style={styles.iconContainer}
+						>
+							<MaterialIcons name="keyboard-arrow-down" size={30} />
+						</TouchableOpacity>
+					</View>
+					<View style={{ flex: 1 }}>
+						<FlatList
+							style={{ flex: 1 }}
+							data={rememberBooks}
+							keyExtractor={(item) => item.idx}
+							renderItem={({ item }) => <Item title={item.title} />}
+							numColumns={numColumns}
+						/>
+					</View>
 				</View>
 				<MenuModal
 					isMenuModal={isMenuModal}
 					onBackdropPress={onBackdropPress}
 				/>
-				{/* <View style={{ height: "50%" }}> */}
-				<ScrollView style={{ flex: 1, backgroundColor: "white" }}>
-					<View style={{ flexDirection: "row" }}>
-						<TouchableOpacity
-							style={{
-								height: windowHeight / 5,
-								backgroundColor: "black",
-								flex: 1,
-							}}
-							onPress={() => addToggleModal()}
-						>
-							<AddModal isAddModal={isAddModal} setIsAddModal={setIsAddModal} />
-						</TouchableOpacity>
-						<View
-							style={{
-								height: windowHeight / 5,
-								backgroundColor: "yellow",
-								flex: 1,
-							}}
-						></View>
-						<View
-							style={{
-								height: windowHeight / 5,
-								backgroundColor: "blue",
-								flex: 1,
-							}}
-						></View>
-					</View>
-				</ScrollView>
-				{/* </View> */}
-			</View>
-		</PaperProvider>
+				<AddModal
+					isAddModal={isAddModal}
+					setIsAddModal={setIsAddModal}
+					loadRememberBooks={loadRememberBooks}
+				/>
+			</PaperProvider>
+		</SafeAreaView>
 	);
 }
 
@@ -222,7 +320,6 @@ const styles = StyleSheet.create({
 		backgroundColor: "green",
 	},
 	menuContainer: {
-		marginTop: "20%",
 		flex: 0.05,
 		backgroundColor: "red",
 		flexDirection: "row",

@@ -17,7 +17,7 @@ app.listen(3001, () => {
 	console.log("Your server is running on port 3001");
 });
 
-app.post("/addrememberbook", (req, res) => {
+app.post("/addRememberBook", (req, res) => {
 	const user = req.body.user;
 	const title = req.body.title;
 	const review = req.body.review;
@@ -30,6 +30,23 @@ app.post("/addrememberbook", (req, res) => {
 				console.log(err);
 			} else {
 				res.send("Inserted values successfully!");
+			}
+		}
+	);
+});
+
+app.get("/getRememberBooks", (req, res) => {
+	const user = req.query.user;
+
+	console.log(user);
+	db.query(
+		"SELECT * FROM rememberbooks.rememberbook WHERE user = ?",
+		[user],
+		(err, result) => {
+			if (err) {
+				console.log(err);
+			} else {
+				res.send(result);
 			}
 		}
 	);

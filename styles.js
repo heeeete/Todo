@@ -6,11 +6,9 @@ export const styles = StyleSheet.create({
 		paddingHorizontal: 30,
 	},
 	header: {
-		flex: 0.2,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		marginTop: 20,
 	},
 	hText: {
 		fontSize: 23,

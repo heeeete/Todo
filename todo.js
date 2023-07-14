@@ -8,6 +8,7 @@ import {
 	Animated,
 	Easing,
 	Modal,
+	SafeAreaView,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { styles } from "./styles";
@@ -401,188 +402,196 @@ function Todo({ navigation }) {
 	};
 	// clearAllData();
 	return (
-		<PaperProvider theme={theme}>
-			<View style={styles.container}>
-				<View style={styles.header}>
-					<Text style={styles.hText}>오늘 할 일</Text>
-					<TouchableOpacity onPress={() => Edit()}>
-						<Text style={styles.editBtn}>{edit ? "닫기" : "편집"}</Text>
-					</TouchableOpacity>
-				</View>
-				<View style={{ flex: 1 }}>
-					{
-						load ? (
-							<Text>Loading...</Text>
-						) : todosLen === 0 ? (
-							<View style={styles.undefinedTodoView}>
-								<Text style={styles.undefinedTodoText}>
-									현재 할 일이 없습니다{"\n"}오늘 해야 할 일을 기록해보세요📋
-								</Text>
-							</View>
-						) : (
-							<DraggableFlatList
-								style={{ height: "100%" }}
-								data={todos}
-								renderItem={({ item: todo, getIndex, drag, isActive }) => {
-									index = getIndex();
-									const isOdd = index % 2 !== 0;
-									const backgroundColor = isOdd
-										? "white"
-										: "rgb(248, 248, 248)";
-									if (edit) {
-										return (
-											<EditTodo
-												key={index}
-												index={index}
-												todo={todo}
-												toggleCheckBox={toggleCheckBox}
-												checkBoxStyles={checkBoxStyles}
-												backgroundColor={backgroundColor}
-												isActive={isActive}
-												drag={drag}
-											/>
-										);
-									} else {
-										return (
-											<TodoItem
-												key={index}
-												index={index}
-												todo={todo}
-												toggleCheckBox={toggleCheckBox}
-												toggleCheck={toggleCheck}
-												modifyToggleModal={modifyToggleModal}
-												backgroundColor={backgroundColor}
-												isActive={isActive}
-												drag={drag}
-											/>
-										);
-									}
-								}}
-								keyExtractor={(item, index) => `draggable-item-${index}`}
-								onDragEnd={({ data }) => {
-									setTodos(data);
-									saveTodos(data);
-								}}
-							/>
-						)
-						//===============================ToDo_List================================//
-					}
-				</View>
-				{/* edit 의 상태를 확인 하여 어떤 Btn을 랜더링 할지 확인 */}
-				<IsEdit edit={edit} deleteTodo={deleteTodo} toggleModal={toggleModal} />
-				<OpenAddModal
-					setIsModalVisible={setIsModalVisible}
-					toggleModal={toggleModal}
-					addTodo={addTodo}
-					maintainSwitch={maintainSwitch}
-					alarmSwitch={alarmSwitch}
-					isModalVisible={isModalVisible}
-					text={text}
-					onChangeText={onChangeText}
-					maintainStatus={maintainStatus}
-					alarm={alarm}
-					date={date}
-					setDate={setDate}
-				/>
-				{/* =====================================밑에 수정 투투=========================================== */}
-				{currentTodo ? (
-					<Modal
-						style={{ marginTop: 300 }}
-						animationType="slide"
-						visible={modifyTodoModalStatus}
-						presentationStyle="pageSheet"
-						onRequestClose={() => {
-							setModifyTodoModalStatus(false);
-						}}
-					>
-						<View style={{ flex: 1, marginHorizontal: 20 }}>
-							<View style={styles.addTodoHeader}>
-								<TouchableOpacity onPress={() => resetTodo()}>
-									<Text
-										style={{
-											padding: 15,
-											fontFamily: "IMHyemin-Regular",
-										}}
-									>
-										취소
+		<SafeAreaView style={{ flex: 1 }}>
+			<PaperProvider theme={theme}>
+				<View style={styles.container}>
+					<View style={styles.header}>
+						<Text style={styles.hText}>오늘 할 일</Text>
+						<TouchableOpacity onPress={() => Edit()}>
+							<Text style={styles.editBtn}>{edit ? "닫기" : "편집"}</Text>
+						</TouchableOpacity>
+					</View>
+					<View style={{ flex: 1 }}>
+						{
+							load ? (
+								<Text>Loading...</Text>
+							) : todosLen === 0 ? (
+								<View style={styles.undefinedTodoView}>
+									<Text style={styles.undefinedTodoText}>
+										현재 할 일이 없습니다{"\n"}오늘 해야 할 일을 기록해보세요📋
 									</Text>
-								</TouchableOpacity>
-								<Text style={{ fontSize: 22, fontFamily: "IMHyemin-Regular" }}>
-									수정하기
-								</Text>
-								<TouchableOpacity onPress={() => updateTodo()}>
-									<Text
-										style={{
-											padding: 15,
-											fontFamily: "IMHyemin-Regular",
-										}}
-									>
-										저장
-									</Text>
-								</TouchableOpacity>
-							</View>
-							<View style={{ flex: 1 }}>
-								<TextInput
-									value={text}
-									returnKeyType="done"
-									onChangeText={onChangeText}
-									style={styles.Input}
-									label={currentTodo.text}
-									underlineColor={underlineColor}
-								></TextInput>
-								<View style={styles.addText}>
-									<View>
-										<Text
-											style={{ fontSize: 17, fontFamily: "IMHyemin-Regular" }}
-										>
-											유지
-										</Text>
+								</View>
+							) : (
+								<DraggableFlatList
+									style={{ height: "100%" }}
+									data={todos}
+									renderItem={({ item: todo, getIndex, drag, isActive }) => {
+										index = getIndex();
+										const isOdd = index % 2 !== 0;
+										const backgroundColor = isOdd
+											? "white"
+											: "rgb(248, 248, 248)";
+										if (edit) {
+											return (
+												<EditTodo
+													key={index}
+													index={index}
+													todo={todo}
+													toggleCheckBox={toggleCheckBox}
+													checkBoxStyles={checkBoxStyles}
+													backgroundColor={backgroundColor}
+													isActive={isActive}
+													drag={drag}
+												/>
+											);
+										} else {
+											return (
+												<TodoItem
+													key={index}
+													index={index}
+													todo={todo}
+													toggleCheckBox={toggleCheckBox}
+													toggleCheck={toggleCheck}
+													modifyToggleModal={modifyToggleModal}
+													backgroundColor={backgroundColor}
+													isActive={isActive}
+													drag={drag}
+												/>
+											);
+										}
+									}}
+									keyExtractor={(item, index) => `draggable-item-${index}`}
+									onDragEnd={({ data }) => {
+										setTodos(data);
+										saveTodos(data);
+									}}
+								/>
+							)
+							//===============================ToDo_List================================//
+						}
+					</View>
+					{/* edit 의 상태를 확인 하여 어떤 Btn을 랜더링 할지 확인 */}
+					<IsEdit
+						edit={edit}
+						deleteTodo={deleteTodo}
+						toggleModal={toggleModal}
+					/>
+					<OpenAddModal
+						setIsModalVisible={setIsModalVisible}
+						toggleModal={toggleModal}
+						addTodo={addTodo}
+						maintainSwitch={maintainSwitch}
+						alarmSwitch={alarmSwitch}
+						isModalVisible={isModalVisible}
+						text={text}
+						onChangeText={onChangeText}
+						maintainStatus={maintainStatus}
+						alarm={alarm}
+						date={date}
+						setDate={setDate}
+					/>
+					{/* =====================================밑에 수정 투투=========================================== */}
+					{currentTodo ? (
+						<Modal
+							style={{ marginTop: 300 }}
+							animationType="slide"
+							visible={modifyTodoModalStatus}
+							presentationStyle="pageSheet"
+							onRequestClose={() => {
+								setModifyTodoModalStatus(false);
+							}}
+						>
+							<View style={{ flex: 1, marginHorizontal: 20 }}>
+								<View style={styles.addTodoHeader}>
+									<TouchableOpacity onPress={() => resetTodo()}>
 										<Text
 											style={{
-												fontSize: 10,
-												marginTop: 5,
-												color: "grey",
+												padding: 15,
+												fontFamily: "IMHyemin-Regular",
 											}}
 										>
-											체크하지 않으시면 다음날 오전 6시에 자동 삭제됩니다.
+											취소
 										</Text>
-									</View>
-									<MySwitch
-										onValueChange={() => modifyMaintainStatus()}
-										value={localMaintainStatus}
-									/>
-								</View>
-								<View
-									style={{
-										...styles.addText,
-										alignItems: "center",
-									}}
-								>
-									<View>
+									</TouchableOpacity>
+									<Text
+										style={{ fontSize: 22, fontFamily: "IMHyemin-Regular" }}
+									>
+										수정하기
+									</Text>
+									<TouchableOpacity onPress={() => updateTodo()}>
 										<Text
-											style={{ fontSize: 17, fontFamily: "IMHyemin-Regular" }}
+											style={{
+												padding: 15,
+												fontFamily: "IMHyemin-Regular",
+											}}
 										>
-											알람
+											저장
 										</Text>
-									</View>
-									<MySwitch
-										onValueChange={() => modifyAlarmSwitch()}
-										value={currentAlarm}
-									/>
+									</TouchableOpacity>
 								</View>
-								{currentAlarm ? (
-									<DatePicker
-										date={new Date(currentDate)}
-										onDateChange={setCurrentDate}
-										minimumDate={new Date()}
-									/>
-								) : null}
+								<View style={{ flex: 1 }}>
+									<TextInput
+										value={text}
+										returnKeyType="done"
+										onChangeText={onChangeText}
+										style={styles.Input}
+										label={currentTodo.text}
+										underlineColor={underlineColor}
+									></TextInput>
+									<View style={styles.addText}>
+										<View>
+											<Text
+												style={{ fontSize: 17, fontFamily: "IMHyemin-Regular" }}
+											>
+												유지
+											</Text>
+											<Text
+												style={{
+													fontSize: 10,
+													marginTop: 5,
+													color: "grey",
+												}}
+											>
+												체크하지 않으시면 다음날 오전 6시에 자동 삭제됩니다.
+											</Text>
+										</View>
+										<MySwitch
+											onValueChange={() => modifyMaintainStatus()}
+											value={localMaintainStatus}
+										/>
+									</View>
+									<View
+										style={{
+											...styles.addText,
+											alignItems: "center",
+										}}
+									>
+										<View>
+											<Text
+												style={{ fontSize: 17, fontFamily: "IMHyemin-Regular" }}
+											>
+												알람
+											</Text>
+										</View>
+										<MySwitch
+											onValueChange={() => modifyAlarmSwitch()}
+											value={currentAlarm}
+										/>
+									</View>
+									{currentAlarm ? (
+										<DatePicker
+											date={new Date(currentDate)}
+											onDateChange={setCurrentDate}
+											minimumDate={new Date()}
+										/>
+									) : null}
+								</View>
 							</View>
-						</View>
-					</Modal>
-				) : null}
-			</View>
-		</PaperProvider>
+						</Modal>
+					) : null}
+				</View>
+			</PaperProvider>
+		</SafeAreaView>
 	);
 }
 
